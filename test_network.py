@@ -1,34 +1,39 @@
 #!/usr/bin/env python3
 import numpy as np
-import matplotlib.pyplot as plt
 from NeuralNetwork import NeuralNetwork
 
 if __name__ == "__main__":
 
-    #Inputs
-    #-----------------------------------------------------------------------
-    # Each row is a training example, each column is a feature  [X1, X2, X3]
-    #x_input = np.array(([0, 0, 1], [0, 1, 1], [1, 0, 1], [1, 1, 1]), dtype=float)
-    #y_output = np.array(([0], [1], [1], [0]), dtype=float)
-    x_input = np.array([0, 0, 1], dtype=float).reshape(1,3)
-    y_output = np.array([0], dtype=float).reshape(1,1)
-    n_iterations = 1500
+    # create a dataset to train a network for the sum operation
+    inputs = np.random.rand(1000,2) * 0.5
+    targets = inputs[:,0] + inputs[:,1]
 
-    #test network
-    my_network = NeuralNetwork(x_input, y_output)
-    errors = []
+    # create a Multilayer Perceptron with one hidden layer
+    network = NeuralNetwork(num_inputs=2, hidden_layers=[5], num_outputs=1)
+    # first_input = inputs[0]
+    # first_output = targets[0]
+    # output = network.feed_forward(inputs=first_input)
+    # network.back_propagate(2*(output - first_output))
+    # loss_function1 = network.loss_function(target=first_output, output=output)
+    # network.weights[1][2,0] += 1e-10
+    # output2 = network.feed_forward(inputs=first_input)
+    # loss_function2 = network.loss_function(target=first_output, output=output2)
+    # derivative = (loss_function2 - loss_function1) / 1e-10
+    # print(derivative)
+    # print(network.weight_derivatives[1][2,0])
 
-    for i in range(n_iterations):
-        predicted_output = my_network.feedforward()
-        errors.append(np.mean(np.square(y_output - predicted_output)))
-        if i % 100 == 0:
-           	print ("Iteration {}".format(i))
-           	print ("Input: {}".format(x_input))
-           	print ("Actual Output {}".format(y_output))
-           	print ("Predicted Output: {}".format(predicted_output))
-           	print ("Loss: {}".format(errors[i])) # mean sum squared loss
-        my_network.train(x_input, y_output)
+    #exit()
+    # train network
+    network.train(inputs=inputs, targets=targets, epochs=100, learning_rate=0.05)
 
-    #Plot the errors
-    plt.plot(errors)
-    plt.show()
+    # create dummy data
+    input = np.array([0.3, 0.1])
+    target = np.array([0.4])
+
+    # get a prediction
+    output = network.feed_forward(inputs=input)
+
+    print()
+    print("Our network believes that {} + {} is equal to {}".format(input[0], input[1], output[0]))
+
+

@@ -1,71 +1,110 @@
 
 import numpy as np
 
-def sigmoid(x):
-    return 1.0 / (1.0 + np.exp(-x))
-
-
-def d_sigmoid(sigmoid_x):
-    '''
-    sigmoid_x is the same as sigmoid(x)
-    '''
-    return sigmoid_x * (1.0 - sigmoid_x)
-
+#TODO: biases to be included
 
 class NeuralNetwork:
-    def __init__(self, x, y):
-        self.input = x
-        self.n_nodes_hiddenlayer = 4
-        self.n_output = 1
-        self.weights1 = np.random.rand(self.input.shape[1], self.n_nodes_hiddenlayer)
-        self.biases1 = np.random.rand(1, self.n_nodes_hiddenlayer)
-        self.weights2 = np.random.rand(self.n_nodes_hiddenlayer, self.n_output)
-        self.biases2 = np.random.rand(1, self.n_output)
-        self.y = y
-        self.output = np.zeros(y.shape)
 
-    def feedforward(self):
-        self.layer1 = sigmoid(np.dot(self.input, self.weights1) + self.biases1)
-        self.layer2 = sigmoid(np.dot(self.layer1, self.weights2) + self.biases2)
-        return self.layer2
-
-    def backprop(self):
+    def __init__(self, num_inputs, hidden_layers, num_outputs):
         '''
-        Loss(y_output - y ) = sigma(y_output- y)^2
-        apply chain rule to get derivitive in respect to w2,w1,b2,b1
-        self.output = r = w2.z + b2
-        self.layer1 = q = w1.x + b1
-        z = sigmoid(r)
-        y = sigmoid(q)
+        Initialize a neural network
+
+        Input Arguments:
+        num_inputs number of input nodes in each training set
+        hidden_layers an array with n elements, each element is presenting one hiddenlayer with element nodes
+        num_outputs number of output nodes
+
         '''
-        #initializing derivitives...
-        self.d_weights1 = np.zeros((self.input.shape[1], self.n_nodes_hiddenlayer))
-        self.d_biases1 = np.zeros((1, self.n_nodes_hiddenlayer))
-        self.d_weights2 = np.zeros((self.n_nodes_hiddenlayer, self.n_output))
-        self.d_biases2 = np.zeros((1, self.n_output))
-        for n in range(self.input.shape[0]):
-            #chain rule components
-            for node in range(self.n_output):
-                d_loss_y = 2.0 * (self.y[n,node] - self.layer2[n,node])
-                self.d_biases2[0,node] = d_loss_y * d_sigmoid(self.layer2[0,node]) * 1.0
-                for previous_node in range(self.n_nodes_hiddenlayer):
-                    self.d_weights2[previous_node,node] = self.d_biases2[0,node] * self.layer1[0,node]
+        self.num_inputs = num_inputs
+        self.hidden_layers = hidden_layers
+        self.num_outputs = num_outputs
 
-            for node in range(self.n_nodes_hiddenlayer):
-                for next_node in range(self.n_output):
-                    self.d_biases1[0,node] += self.d_biases2[0,next_node] * self.weights2[node,next_node] * d_sigmoid(self.layer1[0,node]) * 1.0
-                    for previous_node in range(self.input.shape[1]):
-                        self.d_weights1[previous_node,node] += self.d_biases1[0,node] * self.input[0,previous_node]
+        # an array that represent the nodes in layers
+        layers = [num_inputs] + hidden_layers + [num_outputs]
 
-    #update the weights and biases with derivative of loss function
-    def update(self,learning_rate=0.01):
-        self.weights1 += self.d_weights1 * learning_rate
-        self.weights2 += self.d_weights2 * learning_rate
-        self.biases1 += self.d_biases1 * learning_rate
-        self.biases2 += self.d_biases2 * learning_rate
+        # There is a weight matrix between each two layers with size of nodes on both side
+        weights = []
+        for i in range(len(layers) -1):
+            w = np.random.rand(layers[i], layers[i+1])
+            weights.append(w)
+        self.weights = weights
+        # There is a derivative for each weight
+        weight_derivatives = []
+        for i in range(len(layers)-1):
+            d = np.zeros((layers[i], layers[i+1]))
+            weight_derivatives.append(d)
+        self.weight_derivatives = weight_derivatives
 
-    def train(self, x, y):
-        self.output = self.feedforward()
-        self.backprop()
-        self.update()
+        # There is an activation for each node of each layer
+        activation = []
+        for i in range(len(layers)):
+            a = np.zeros(layers[i])
+            activation.append(a)
+        self.activation = activation
+
+    def feed_forward(self, inputs):
+        '''
+        Calculate the activation for each node with the help of weights
+        activation(L+1) = sigmoid(weights(L)*activation(L))
+        returns activations for each node
+        '''
+        self.activation[0] = inputs
+        for i, weight in enumerate(self.weights):
+            self.activation[i+1] = self.sigmoid(np.inner(weight.T, self.activation[i]))
+        return self.activation[-1]
+
+    def back_propagate(self, loss_function_derivative):
+        '''
+        Loss(target, activation) = Σ(target-activation)**2
+        error = 2 * (target-activation)
+        Apply chain rule to get derivitive
+        '''
+        error = loss_function_derivative # = dC/da
+        # Walking backward to calculate weight derivatives
+        for i in reversed(range(len(self.weight_derivatives))):
+            # delta = dC/da * da/dz
+            delta = error * self.sigmoid_derivative(self.activation[i+1])
+            # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
+            self.weight_derivatives[i] = np.outer(self.activation[i], delta)
+            # update error for next step
+            # dC/da-1 = dC/da * da/dz * dz/da-1 [note that dz/da-1 = w]
+            error = np.inner(self.weights[i], delta)
+
+    # update the weights and biases with derivative of loss function
+    def gradient_descent(self, learning_rate):
+        for i in range(len(self.weights)):
+            self.weights[i] += self.weight_derivatives[i] * learning_rate
+
+
+    def train(self, inputs, targets, epochs, learning_rate):
+
+        for i in range(epochs):
+            sum_errors = 0.0
+            # loop over all training sets
+            for input, target in zip(inputs, targets):
+                output = self.feed_forward(input)
+                loss_function_derivative = 2.0 * (target - output)
+                self.back_propagate(loss_function_derivative)
+                self.gradient_descent(learning_rate)
+                sum_errors += self.loss_function(target, output)
+
+            # report mean error of all training sets
+            print("Error: {} at epoch {}".format(sum_errors / len(inputs), i+1))
+
+
+    def sigmoid(self, x):
+        return 1.0 / (1.0 + np.exp(-x))
+
+    def sigmoid_derivative(self, sigmoid_x):
+        '''
+        sigmoid_x is the same as sigmoid(x)
+        '''
+        return sigmoid_x * (1.0 - sigmoid_x)
+
+    def loss_function(self, target, output):
+        '''
+        Calculate loss function
+        '''
+        return np.average((target - output) ** 2)
+
 
