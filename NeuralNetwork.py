@@ -21,6 +21,7 @@ class NeuralNetwork:
 
         # an array that represent the nodes in layers
         layers = [num_inputs] + hidden_layers + [num_outputs]
+        self.layers = layers
 
         # There is a weight matrix between each two layers with size of nodes on both side
         weights = []
@@ -34,13 +35,24 @@ class NeuralNetwork:
             d = np.zeros((layers[i], layers[i+1]))
             weight_derivatives.append(d)
         self.weight_derivatives = weight_derivatives
-
         # There is an activation for each node of each layer
         activation = []
         for i in range(len(layers)):
             a = np.zeros(layers[i])
             activation.append(a)
         self.activation = activation
+        # Each activation has a bias except input
+        biases = []
+        for i in range(1,len(layers)):
+            b = np.random.rand(layers[i])
+            biases.append(b)
+        self.biases = biases
+        # Each bias has a derivative
+        bias_derivatives = []
+        for i in range(1,len(layers)):
+            db = np.zeros(layers[i])
+            bias_derivatives.append(db)
+        self.bias_derivatives = bias_derivatives
 
     def feed_forward(self, inputs):
         '''
@@ -50,7 +62,7 @@ class NeuralNetwork:
         '''
         self.activation[0] = inputs
         for i, weight in enumerate(self.weights):
-            self.activation[i+1] = self.sigmoid(np.inner(weight.T, self.activation[i]))
+            self.activation[i+1] = self.sigmoid(np.inner(weight.T, self.activation[i]) + self.biases[i])
         return self.activation[-1]
 
     def back_propagate(self, loss_function_derivative):
@@ -64,6 +76,8 @@ class NeuralNetwork:
         for i in reversed(range(len(self.weight_derivatives))):
             # delta = dC/da * da/dz
             delta = error * self.sigmoid_derivative(self.activation[i+1])
+            # dC/db = dC/da * da/dz * dx/db [note that dx/db = 1]
+            self.bias_derivatives[i] = delta
             # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
             self.weight_derivatives[i] = np.outer(self.activation[i], delta)
             # update error for next step
@@ -73,7 +87,9 @@ class NeuralNetwork:
     # update the weights and biases with derivative of loss function
     def gradient_descent(self, learning_rate):
         for i in range(len(self.weights)):
-            self.weights[i] += self.weight_derivatives[i] * learning_rate
+            self.weights[i] -= self.weight_derivatives[i] * learning_rate
+        for i in range(1,len(self.biases)):
+            self.biases[i] -= self.bias_derivatives[i] * learning_rate
 
 
     def train(self, inputs, targets, epochs, learning_rate):
@@ -83,13 +99,12 @@ class NeuralNetwork:
             # loop over all training sets
             for input, target in zip(inputs, targets):
                 output = self.feed_forward(input)
-                loss_function_derivative = 2.0 * (target - output)
-                self.back_propagate(loss_function_derivative)
+                self.back_propagate(self.loss_function_derivative(target, output))
                 self.gradient_descent(learning_rate)
                 sum_errors += self.loss_function(target, output)
 
-            # report mean error of all training sets
-            print("Error: {} at epoch {}".format(sum_errors / len(inputs), i+1))
+            # report mean error of all training sets each 10th epoch
+            print("Error: {:.10f} at epoch {}".format(sum_errors / len(inputs), i+1)) if i%10 == 0 else None
 
 
     def sigmoid(self, x):
@@ -106,5 +121,11 @@ class NeuralNetwork:
         Calculate loss function
         '''
         return np.average((target - output) ** 2)
+
+    def loss_function_derivative(self, target, output):
+        '''
+        Calculate loss function derivative (dC/da)
+        '''
+        return -2.0 * (target - output)
 
 
