@@ -1,23 +1,21 @@
-
 import numpy as np
 
-#TODO: biases to be included
 
 class NeuralNetwork:
 
-    def __init__(self, num_inputs, hidden_layers, num_outputs):
+    def __init__(self, num_inputs, hidden_layers, num_outputs, activation_function):
         '''
         Initialize a neural network
-
-        Input Arguments:
         num_inputs number of input nodes in each training set
-        hidden_layers an array with n elements, each element is presenting one hiddenlayer with element nodes
+        hidden_layers ndarray[n,m,..]: len(ndarray) = number of hidden layers,
+                                       n, m.. are number of nodes per layer
         num_outputs number of output nodes
-
+        activation_function is "sigmoid" or "tanh"
         '''
         self.num_inputs = num_inputs
         self.hidden_layers = hidden_layers
         self.num_outputs = num_outputs
+        self.activation_function = activation_function
 
         # an array that represent the nodes in layers
         layers = [num_inputs] + hidden_layers + [num_outputs]
@@ -25,14 +23,14 @@ class NeuralNetwork:
 
         # There is a weight matrix between each two layers with size of nodes on both side
         weights = []
-        for i in range(len(layers) -1):
-            w = np.random.rand(layers[i], layers[i+1])
+        for i in range(len(layers) - 1):
+            w = np.random.rand(layers[i], layers[i + 1])
             weights.append(w)
         self.weights = weights
         # There is a derivative for each weight
         weight_derivatives = []
-        for i in range(len(layers)-1):
-            d = np.zeros((layers[i], layers[i+1]))
+        for i in range(len(layers) - 1):
+            d = np.zeros((layers[i], layers[i + 1]))
             weight_derivatives.append(d)
         self.weight_derivatives = weight_derivatives
         # There is an activation for each node of each layer
@@ -43,13 +41,13 @@ class NeuralNetwork:
         self.activation = activation
         # Each activation has a bias except input
         biases = []
-        for i in range(1,len(layers)):
+        for i in range(1, len(layers)):
             b = np.random.rand(layers[i])
             biases.append(b)
         self.biases = biases
         # Each bias has a derivative
         bias_derivatives = []
-        for i in range(1,len(layers)):
+        for i in range(1, len(layers)):
             db = np.zeros(layers[i])
             bias_derivatives.append(db)
         self.bias_derivatives = bias_derivatives
@@ -57,25 +55,37 @@ class NeuralNetwork:
     def feed_forward(self, inputs):
         '''
         Calculate the activation for each node with the help of weights
-        activation(L+1) = sigmoid(weights(L)*activation(L))
+        activation(L+1) = sigmoid(weights(L)*activation(L) + biases(L+1))
+                        or   tanh(weights(L)*activation(L) + biases(L+1))
         returns activations for each node
         '''
         self.activation[0] = inputs
-        for i, weight in enumerate(self.weights):
-            self.activation[i+1] = self.sigmoid(np.inner(weight.T, self.activation[i]) + self.biases[i])
+        if 'sigmoid' in self.activation_function:
+            for i, weight in enumerate(self.weights):
+                self.activation[i + 1] = self.sigmoid(np.inner(weight.T, self.activation[i]) +
+                                                      self.biases[i])
+        elif 'tanh' in self.activation_function:
+            for i, weight in enumerate(self.weights):
+                self.activation[i + 1] = self.hyperbolic_tangent(np.inner(weight.T, self.activation[i]) +
+                                                                 self.biases[i])
         return self.activation[-1]
 
     def back_propagate(self, loss_function_derivative):
         '''
         Loss(target, activation) = Σ(target-activation)**2
-        error = 2 * (target-activation)
-        Apply chain rule to get derivitive
+        Apply chain rule to get derivative
         '''
-        error = loss_function_derivative # = dC/da
+        # = dC/da
+        error = loss_function_derivative
         # Walking backward to calculate weight derivatives
         for i in reversed(range(len(self.weight_derivatives))):
-            # delta = dC/da * da/dz
-            delta = error * self.sigmoid_derivative(self.activation[i+1])
+            # calculate delta dependent on activation funtion type
+            if 'sigmoid' in self.activation_function:
+                # delta = dC/da * da/dz
+                delta = error * self.sigmoid_derivative(self.activation[i + 1])
+            elif 'tanh' in self.activation_function:
+                # delta = dC/da * da/dz
+                delta = error * self.hyperbolic_tangent_derivative(self.activation[i + 1])
             # dC/db = dC/da * da/dz * dx/db [note that dx/db = 1]
             self.bias_derivatives[i] = delta
             # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
@@ -88,33 +98,26 @@ class NeuralNetwork:
     def gradient_descent(self, learning_rate):
         for i in range(len(self.weights)):
             self.weights[i] -= self.weight_derivatives[i] * learning_rate
-        for i in range(1,len(self.biases)):
+        for i in range(1, len(self.biases)):
             self.biases[i] -= self.bias_derivatives[i] * learning_rate
 
-
     def train(self, inputs, targets, epochs, learning_rate):
-
         for i in range(epochs):
             sum_errors = 0.0
+            # shuffle the training sets first: stochastic gradient descent
+            permutation = np.random.permutation(inputs.shape[0])
+            shuffled_inputs = inputs[permutation]
+            shuffled_targets = targets[permutation]
             # loop over all training sets
-            for input, target in zip(inputs, targets):
+            for input, target in zip(shuffled_inputs, shuffled_targets):
                 output = self.feed_forward(input)
                 self.back_propagate(self.loss_function_derivative(target, output))
                 self.gradient_descent(learning_rate)
                 sum_errors += self.loss_function(target, output)
 
             # report mean error of all training sets each 10th epoch
-            print("Error: {:.10f} at epoch {}".format(sum_errors / len(inputs), i+1)) if i%10 == 0 else None
-
-
-    def sigmoid(self, x):
-        return 1.0 / (1.0 + np.exp(-x))
-
-    def sigmoid_derivative(self, sigmoid_x):
-        '''
-        sigmoid_x is the same as sigmoid(x)
-        '''
-        return sigmoid_x * (1.0 - sigmoid_x)
+            if i % 10 == 0:
+                print("Error: {:.10f} at epoch {}".format(sum_errors / len(inputs), i))
 
     def loss_function(self, target, output):
         '''
@@ -128,4 +131,27 @@ class NeuralNetwork:
         '''
         return -2.0 * (target - output)
 
+    # Activation functions and their derivatives
+    def sigmoid(self, x):
+        '''
+        The function takes any real value as input and outputs values in the range 0 to 1.
+        '''
+        return 1.0 / (1.0 + np.exp(-x))
 
+    def sigmoid_derivative(self, sigmoid_x):
+        '''
+        sigmoid_x is the same as sigmoid(x)
+        '''
+        return sigmoid_x * (1.0 - sigmoid_x)
+
+    def hyperbolic_tangent(self, x):
+        '''
+        The function takes any real value as input and outputs values in the range -1 to 1.
+        '''
+        return (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
+
+    def hyperbolic_tangent_derivative(self, tanh_x):
+        '''
+        tanh_x is the same as tanh(x)
+        '''
+        return 1 - tanh_x ** 2
