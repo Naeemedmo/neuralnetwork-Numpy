@@ -39,32 +39,42 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
                 network.weights[i][j, k] -= epsilon
 
 
+def test_network(network, test_input):
+    output = network.feed_forward(inputs=test_input)
+    target1 = test_input[0] + test_input[1]
+    target2 = test_input[0] - test_input[1]
+    print()
+    print(" Network: {} + {} = {:+.5f} ({:.2f})".format(test_input[0], test_input[1], output[0], target1))
+    print(" Network: {} - {} = {:+.5f} ({:.2f})".format(test_input[0], test_input[1], output[1], target2))
+
+
 if __name__ == "__main__":
 
-    # create a dataset to train a network for the sum operation
-    inputs = np.random.rand(100, 2) * 0.5
-    targets = np.stack((inputs[:, 0] + inputs[:, 1], inputs[:, 0] - inputs[:, 1]), axis=1)
-
     # For testing only one element in output is allowed
-    network = NeuralNetwork(num_inputs=2, hidden_layers=[5], num_outputs=1, activation_function='tanh')
     single_input = np.array([0.3, 0.1])
     single_output = np.array([0.4])
+    network = NeuralNetwork(num_inputs=2, hidden_layers=[3], num_outputs=1, activation_function='tanh')
     check_weight_derivatives(network=network, input=single_input, target=single_output, epsilon=1e-10,
                              accept_diff=1e-5, print_info=False)
     del network
     # create a Multilayer Perceptron with one hidden layer
-    network = NeuralNetwork(num_inputs=2, hidden_layers=[5], num_outputs=2, activation_function='tanh')
+    network = NeuralNetwork(num_inputs=2, hidden_layers=[5, 4], num_outputs=2, activation_function='tanh')
 
+    # create a dataset to train a network for the sum operation
+    inputs = np.random.rand(100, 2) * 0.5
+    targets = np.stack((inputs[:, 0] + inputs[:, 1], inputs[:, 0] - inputs[:, 1]), axis=1)
     # train network
     network.train(inputs=inputs, targets=targets, epochs=1000, learning_rate=0.01)
 
-    # create dummy data
-    test_input = np.array([0.3, 0.1])
-    test_target = np.array([0.4, 0.2])
-
-    # get a prediction
-    output = network.feed_forward(inputs=test_input)
-
-    print()
-    print("Network believes that {} + {} is equal to {:.8f}".format(test_input[0], test_input[1], output[0]))
-    print("Network believes that {} - {} is equal to {:.8f}".format(test_input[0], test_input[1], output[1]))
+    # test1
+    test_input = np.array([0.30, 0.10])
+    test_network(network, test_input)
+    # test2
+    test_input = np.array([0.24, 0.36])
+    test_network(network, test_input)
+    # test3
+    test_input = np.array([0.11, 0.42])
+    test_network(network, test_input)
+    # test4
+    test_input = np.array([0.27, 0.27])
+    test_network(network, test_input)
