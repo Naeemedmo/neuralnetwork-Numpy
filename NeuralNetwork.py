@@ -28,35 +28,16 @@ class NeuralNetwork:
         self.layers = layers
 
         # There is a weight matrix between each two layers with size of nodes on both side
-        weights = []
-        for i in range(len(layers) - 1):
-            w = np.random.rand(layers[i], layers[i + 1])
-            weights.append(w)
-        self.weights = weights
+        self.weights = [np.random.rand(layers[i], layers[i + 1]) for i in range(len(layers) - 1)]
+
         # There is a derivative for each weight
-        weight_derivatives = []
-        for i in range(len(layers) - 1):
-            d = np.zeros((layers[i], layers[i + 1]))
-            weight_derivatives.append(d)
-        self.weight_derivatives = weight_derivatives
-        # There is an activation for each node of each layer
-        activation = []
-        for i in range(len(layers)):
-            a = np.zeros(layers[i])
-            activation.append(a)
-        self.activation = activation
+        self.weight_derivatives = [np.zeros((layers[i], layers[i + 1])) for i in range(len(layers) - 1)]
+
         # Each activation has a bias except input
-        biases = []
-        for i in range(1, len(layers)):
-            b = np.random.rand(layers[i])
-            biases.append(b)
-        self.biases = biases
+        self.biases = [np.random.rand(layer) for layer in layers[1:]]
+
         # Each bias has a derivative
-        bias_derivatives = []
-        for i in range(1, len(layers)):
-            db = np.zeros(layers[i])
-            bias_derivatives.append(db)
-        self.bias_derivatives = bias_derivatives
+        self.bias_derivatives = [np.zeros(layer) for layer in layers[1:]]
 
     def feed_forward(self, inputs):
         '''
@@ -65,29 +46,38 @@ class NeuralNetwork:
                         or   tanh(weights(L)*activation(L) + biases(L+1))
         returns activations for each node
         '''
-        self.activation[0] = inputs
+        # There is an activation for each node of each layer
+        activations = [np.zeros(layer) for layer in self.layers]
+        activations[0] = inputs
         for i, weight in enumerate(self.weights):
-            self.activation[i + 1] = self.activation_function(
-                np.inner(weight.T, self.activation[i]) + self.biases[i]
+            activations[i + 1] = self.activation_function(
+                np.inner(weight.T, activations[i]) + self.biases[i]
             )
-        return self.activation[-1]
+        return activations
 
-    def back_propagate(self, loss_function_derivative):
+    def predict(self, inputs):
+        '''
+        return the prediction for given input
+        '''
+        activations = self.feed_forward(inputs)
+        return activations[-1]
+
+    def back_propagate(self, target, activations):
         '''
         Loss(target, activation) = Σ(target-activation)**2
         Apply chain rule to get derivative
         '''
         # error = dC/da
-        error = loss_function_derivative
+        error = self.loss_function_derivative(target, activations[-1])
         # Walking backward to calculate weight derivatives
         for i in reversed(range(len(self.weight_derivatives))):
             # calculate delta dependent on activation funtion type
             # delta = dC/da * da/dz
-            delta = error * self.activation_derivative(self.activation[i + 1])
+            delta = error * self.activation_derivative(activations[i + 1])
             # dC/db = dC/da * da/dz * dx/db [note that dx/db = 1]
             self.bias_derivatives[i] = delta
             # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
-            self.weight_derivatives[i] = np.outer(self.activation[i], delta)
+            self.weight_derivatives[i] = np.outer(activations[i], delta)
             # update error for next step
             # dC/da-1 = dC/da * da/dz * dz/da-1 [note that dz/da-1 = w]
             error = np.inner(self.weights[i], delta)
@@ -108,10 +98,10 @@ class NeuralNetwork:
             shuffled_targets = targets[permutation]
             # loop over all training sets
             for input, target in zip(shuffled_inputs, shuffled_targets):
-                output = self.feed_forward(input)
-                self.back_propagate(self.loss_function_derivative(target, output))
+                activations = self.feed_forward(input)
+                self.back_propagate(target, activations)
                 self.gradient_descent(learning_rate)
-                sum_errors += self.loss_function(target, output)
+                sum_errors += self.loss_function(target, activations[-1])
             yield sum_errors / len(shuffled_inputs)
 
     def loss_function(self, target, output):

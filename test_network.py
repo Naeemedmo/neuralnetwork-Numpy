@@ -13,10 +13,10 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
     accept_diff maximum of difference accepted between numerical derivative and network derivatice
     '''
     # f(x)
-    output1 = network.feed_forward(inputs=input)
-    loss_function1 = network.loss_function(target, output1)
+    activations = network.feed_forward(inputs=input)
+    loss_function1 = network.loss_function(target, activations[-1])
     # calculate derivatives once
-    network.back_propagate(network.loss_function_derivative(target, output1))
+    network.back_propagate(target, activations)
     # change the weight by epsilon (x + h)
     for i in range(len(network.layers) - 1):
         for j in range(network.layers[i]):
@@ -24,7 +24,7 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
 
                 network.weights[i][j, k] += epsilon
                 # f(x+h), dC/dw
-                output2 = network.feed_forward(inputs=input)
+                output2 = network.predict(inputs=input)
                 loss_function2 = network.loss_function(target, output2)
                 # slope = (f(x+h) - f(x)) / h
                 numerical_derivative = (loss_function2 - loss_function1) / epsilon
@@ -43,7 +43,7 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
 
 
 def test_network(network, test_input):
-    output = network.feed_forward(inputs=test_input)
+    output = network.predict(inputs=test_input)
     target1 = test_input[0] + test_input[1]
     target2 = test_input[0] - test_input[1]
     print()
