@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import numpy as np
 from NeuralNetwork import NeuralNetwork
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+from tqdm import tqdm
 
 
 def check_weight_derivatives(network, input, target, epsilon, accept_diff, print_info):
@@ -48,6 +51,23 @@ def test_network(network, test_input):
     print(" Network: {} - {} = {:+.5f} ({:.2f})".format(test_input[0], test_input[1], output[1], target2))
 
 
+class LossPlot():
+
+    def __init__(self):
+        fig = plt.figure()
+        self.ax = fig.add_subplot(1, 1, 1)
+
+    def plot(self, data):
+        self.ax.clear()
+        self.ax.set_title('Mean loss function over iterations')
+        self.ax.set_xlabel('Iterations')
+        self.ax.set_ylabel('Loss function')
+        self.ax.set_yscale('log')
+        self.ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        self.ax.plot(data)
+        plt.pause(0.001)
+
+
 if __name__ == "__main__":
 
     # For testing only one element in output is allowed
@@ -63,10 +83,22 @@ if __name__ == "__main__":
     # create a dataset to train a network for the sum operation
     inputs = np.random.rand(100, 2) * 0.5
     targets = np.stack((inputs[:, 0] + inputs[:, 1], inputs[:, 0] - inputs[:, 1]), axis=1)
-    # train network
-    network.train(inputs=inputs, targets=targets, epochs=1000, learning_rate=0.01)
 
+    # train network
+    num_iterations = 300
+    # Create a generator for training and the test data
+    trainer = network.train(inputs=inputs, targets=targets, epochs=num_iterations, learning_rate=0.01)
+    # Train the network and plot the results
+    plot = LossPlot()
+    sum_errors = []
+    for loss in tqdm(trainer, total=num_iterations, desc="Training neural network:"):
+        sum_errors.append(loss)
+        plot.plot(sum_errors)
+
+    print()
+    print("Now let's do some tests... :-)")
     # test1
+    inputs = np.random.rand(100, 2) * 0.5
     test_input = np.array([0.30, 0.10])
     test_network(network, test_input)
     # test2
@@ -78,3 +110,5 @@ if __name__ == "__main__":
     # test4
     test_input = np.array([0.27, 0.27])
     test_network(network, test_input)
+
+    plt.show()

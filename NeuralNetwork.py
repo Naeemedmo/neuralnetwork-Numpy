@@ -112,10 +112,7 @@ class NeuralNetwork:
                 self.back_propagate(self.loss_function_derivative(target, output))
                 self.gradient_descent(learning_rate)
                 sum_errors += self.loss_function(target, output)
-
-            # report mean error of all training sets each 10th epoch
-            if i % 10 == 0:
-                print("Error: {:.10f} at epoch {}".format(sum_errors / len(inputs), i))
+            yield sum_errors / len(shuffled_inputs)
 
     def loss_function(self, target, output):
         '''
