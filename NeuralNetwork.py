@@ -15,7 +15,13 @@ class NeuralNetwork:
         self.num_inputs = num_inputs
         self.hidden_layers = hidden_layers
         self.num_outputs = num_outputs
-        self.activation_function = activation_function
+        # choice of activation function
+        if 'sigmoid' in activation_function:
+            self.activation_function = self.sigmoid
+            self.activation_derivative = self.sigmoid_derivative
+        elif 'tanh' in activation_function:
+            self.activation_function = self.hyperbolic_tangent
+            self.activation_derivative = self.hyperbolic_tangent_derivative
 
         # an array that represent the nodes in layers
         layers = [num_inputs] + hidden_layers + [num_outputs]
@@ -60,14 +66,10 @@ class NeuralNetwork:
         returns activations for each node
         '''
         self.activation[0] = inputs
-        if 'sigmoid' in self.activation_function:
-            for i, weight in enumerate(self.weights):
-                self.activation[i + 1] = self.sigmoid(np.inner(weight.T, self.activation[i]) +
-                                                      self.biases[i])
-        elif 'tanh' in self.activation_function:
-            for i, weight in enumerate(self.weights):
-                self.activation[i + 1] = self.hyperbolic_tangent(np.inner(weight.T, self.activation[i]) +
-                                                                 self.biases[i])
+        for i, weight in enumerate(self.weights):
+            self.activation[i + 1] = self.activation_function(
+                np.inner(weight.T, self.activation[i]) + self.biases[i]
+            )
         return self.activation[-1]
 
     def back_propagate(self, loss_function_derivative):
@@ -75,17 +77,13 @@ class NeuralNetwork:
         Loss(target, activation) = Σ(target-activation)**2
         Apply chain rule to get derivative
         '''
-        # = dC/da
+        # error = dC/da
         error = loss_function_derivative
         # Walking backward to calculate weight derivatives
         for i in reversed(range(len(self.weight_derivatives))):
             # calculate delta dependent on activation funtion type
-            if 'sigmoid' in self.activation_function:
-                # delta = dC/da * da/dz
-                delta = error * self.sigmoid_derivative(self.activation[i + 1])
-            elif 'tanh' in self.activation_function:
-                # delta = dC/da * da/dz
-                delta = error * self.hyperbolic_tangent_derivative(self.activation[i + 1])
+            # delta = dC/da * da/dz
+            delta = error * self.activation_derivative(self.activation[i + 1])
             # dC/db = dC/da * da/dz * dx/db [note that dx/db = 1]
             self.bias_derivatives[i] = delta
             # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
