@@ -12,6 +12,8 @@ class NeuralNetwork:
         num_outputs number of output nodes
         activation_function is "sigmoid" or "tanh"
         '''
+        if num_inputs < 2:
+            exit(" num_inputs must be more than 1!")
         self.num_inputs = num_inputs
         self.hidden_layers = hidden_layers
         self.num_outputs = num_outputs
@@ -41,7 +43,7 @@ class NeuralNetwork:
         returns activations for each node
         '''
         # There is an activation for each node of each layer
-        activations = [inputs]
+        activations = [np.atleast_2d(inputs)]
         for bias, weight in zip(self.biases, self.weights):
             activations.append(
                 self.activation_function(np.inner(weight.T, activations[-1]).T + bias)

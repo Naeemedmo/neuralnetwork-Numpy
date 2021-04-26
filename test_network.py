@@ -13,7 +13,7 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
     accept_diff maximum of difference accepted between numerical derivative and network derivatice
     '''
     # f(x)
-    activations = network.feed_forward(inputs=input.reshape(1, -1))
+    activations = network.feed_forward(inputs=input)
     loss_function1 = network.loss_function(target, activations[-1])
     # calculate derivatives once
     weight_derivatives, bias_derivatives = network.back_propagate(target, activations)
