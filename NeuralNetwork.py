@@ -30,14 +30,8 @@ class NeuralNetwork:
         # There is a weight matrix between each two layers with size of nodes on both side
         self.weights = [np.random.rand(layers[i], layers[i + 1]) for i in range(len(layers) - 1)]
 
-        # There is a derivative for each weight
-        self.weight_derivatives = [np.zeros((layers[i], layers[i + 1])) for i in range(len(layers) - 1)]
-
         # Each activation has a bias except input
         self.biases = [np.random.rand(layer) for layer in layers[1:]]
-
-        # Each bias has a derivative
-        self.bias_derivatives = [np.zeros(layer) for layer in layers[1:]]
 
     def feed_forward(self, inputs):
         '''
@@ -47,11 +41,10 @@ class NeuralNetwork:
         returns activations for each node
         '''
         # There is an activation for each node of each layer
-        activations = [np.zeros(layer) for layer in self.layers]
-        activations[0] = inputs
-        for i, weight in enumerate(self.weights):
-            activations[i + 1] = self.activation_function(
-                np.inner(weight.T, activations[i]) + self.biases[i]
+        activations = [inputs]
+        for bias, weight in zip(self.biases, self.weights):
+            activations.append(
+                self.activation_function(np.inner(weight.T, activations[-1]).T + bias)
             )
         return activations
 
@@ -67,41 +60,51 @@ class NeuralNetwork:
         Loss(target, activation) = Σ(target-activation)**2
         Apply chain rule to get derivative
         '''
+        # Each bias has a derivative
+        bias_derivatives = self.biases.copy()
+        # There is a derivative for each weight
+        weight_derivatives = self.weights.copy()
         # error = dC/da
         error = self.loss_function_derivative(target, activations[-1])
         # Walking backward to calculate weight derivatives
-        for i in reversed(range(len(self.weight_derivatives))):
+        for i in reversed(range(len(weight_derivatives))):
             # calculate delta dependent on activation funtion type
             # delta = dC/da * da/dz
             delta = error * self.activation_derivative(activations[i + 1])
             # dC/db = dC/da * da/dz * dx/db [note that dx/db = 1]
-            self.bias_derivatives[i] = delta
+            bias_derivatives[i] = np.average(delta, axis=0)
             # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
-            self.weight_derivatives[i] = np.outer(activations[i], delta)
+            weight_derivatives[i] = np.dot(activations[i].T, delta)
             # update error for next step
             # dC/da-1 = dC/da * da/dz * dz/da-1 [note that dz/da-1 = w]
-            error = np.inner(self.weights[i], delta)
+            error = np.inner(self.weights[i], delta).T
+        return weight_derivatives, bias_derivatives
 
     # update the weights and biases with derivative of loss function
-    def gradient_descent(self, learning_rate):
+    def gradient_descent(self, learning_rate, weight_derivatives, bias_derivatives):
         for i in range(len(self.weights)):
-            self.weights[i] -= self.weight_derivatives[i] * learning_rate
-        for i in range(1, len(self.biases)):
-            self.biases[i] -= self.bias_derivatives[i] * learning_rate
+            self.weights[i] -= weight_derivatives[i] * learning_rate
+        for i in range(len(self.biases)):
+            self.biases[i] -= bias_derivatives[i] * learning_rate
 
-    def train(self, inputs, targets, epochs, learning_rate):
+    def train(self, inputs, targets, epochs, learning_rate, batch_size):
         for i in range(epochs):
             sum_errors = 0.0
             # shuffle the training sets first: stochastic gradient descent
             permutation = np.random.permutation(inputs.shape[0])
             shuffled_inputs = inputs[permutation]
             shuffled_targets = targets[permutation]
+            n_batch = len(shuffled_inputs) // batch_size
+            if n_batch * batch_size != len(shuffled_inputs):
+                exit(" Input array is not dividable by batch_size! Please choose another batch_size!")
             # loop over all training sets
-            for input, target in zip(shuffled_inputs, shuffled_targets):
-                activations = self.feed_forward(input)
-                self.back_propagate(target, activations)
-                self.gradient_descent(learning_rate)
-                sum_errors += self.loss_function(target, activations[-1])
+            for n in range(n_batch):
+                j = n * batch_size
+                k = (n + 1) * batch_size
+                activations = self.feed_forward(shuffled_inputs[j:k])
+                weight_derivatives, bias_derivatives = self.back_propagate(shuffled_targets[j:k], activations)
+                self.gradient_descent(learning_rate, weight_derivatives, bias_derivatives)
+                sum_errors += self.loss_function(shuffled_targets[j:k], activations[-1])
             yield sum_errors / len(shuffled_inputs)
 
     def loss_function(self, target, output):
