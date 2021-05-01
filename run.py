@@ -4,17 +4,25 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from neuralnetwork import NeuralNetwork
 from plot import NetworkPlot, LossPlot
-from test import check_weight_derivatives, predict_addition_subtraction_of_two_numbers
+
+
+def predict_addition_subtraction_of_two_numbers(network, test_input):
+    output = network.predict(inputs=test_input)
+    target = [test_input[0] + test_input[1], test_input[0] - test_input[1]]
+    print()
+    print(" Network: {} + {} = {:+.5f} ({:+.2f})".format(
+        test_input[0], test_input[1], output[0][0], target[0])
+    )
+    print(" Network: {} - {} = {:+.5f} ({:+.2f})".format(
+        test_input[0], test_input[1], output[0][1], target[1])
+    )
+    print(" Network: Loss function = {:.7f}".format(
+        network.loss_function(target=target, output=output))
+    )
 
 
 if __name__ == "__main__":
 
-    # For testing only one element in output is allowed
-    single_input = np.array([0.3, 0.1])
-    single_output = np.array([0.4])
-    network = NeuralNetwork(num_inputs=2, hidden_layers=[3], num_outputs=1, activation_function='tanh')
-    check_weight_derivatives(network=network, input=single_input, target=single_output, epsilon=1e-10,
-                             accept_diff=1e-5, print_info=False)
     # create a Multilayer Perceptron with one hidden layer
     network = NeuralNetwork(num_inputs=2, hidden_layers=[4, 5], num_outputs=2, activation_function='tanh')
 
