@@ -31,7 +31,7 @@ test:
     # check the style
     - flake8 --config flake8.config --exclude venv
     # test the network 
-    - ./test.py
+    - pytest
 
 #pages:
 #  script:

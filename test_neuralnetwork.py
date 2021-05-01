@@ -26,26 +26,24 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
                 numerical_derivative = (loss_function2 - loss_function1) / epsilon
                 difference = abs(numerical_derivative - weight_derivatives[i][j, k])
 
-                if print_info:
+                if print_info or difference > accept_diff:
                     print()
                     print(" Layer: {}, leftside node: {}, rightside node: {}".format(i, j, k))
                     print(" The difference is:           {:.8f}".format(difference))
                     print(" The numerical derivative is: {:.8f}".format(numerical_derivative))
                     print(" The network's derivative is: {:.8f}".format(weight_derivatives[i][j, k]))
                     print()
-                if difference > accept_diff:
-                    exit(" Derivative check failed! Check the network implementation!")
+                assert difference < accept_diff, "Derivative check failed! Check the network implementation!"
                 network.weights[i][j, k] -= epsilon
 
 
-if __name__ == "__main__":
+# test num_inputs num_outputs
 
-    # test num_inputs num_outputs
+# test batch_size
 
-    # test batch_size
+# test activation functions tanh sigmoid
 
-    # test activation functions tanh sigmoid
-
+def test_derivatives():
     # For testing only one element in output is allowed
     single_input = np.array([0.3, 0.1])
     single_output = np.array([0.4])

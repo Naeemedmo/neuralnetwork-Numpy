@@ -2,3 +2,4 @@ matplotlib==3.4.1
 numpy==1.20.2
 tqdm==4.60.0
 flake8
+pytest==6.2.3
