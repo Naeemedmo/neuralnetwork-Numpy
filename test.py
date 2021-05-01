@@ -38,21 +38,6 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
                 network.weights[i][j, k] -= epsilon
 
 
-def predict_addition_subtraction_of_two_numbers(network, test_input):
-    output = network.predict(inputs=test_input)
-    target = [test_input[0] + test_input[1], test_input[0] - test_input[1]]
-    print()
-    print(" Network: {} + {} = {:+.5f} ({:+.2f})".format(
-        test_input[0], test_input[1], output[0][0], target[0])
-    )
-    print(" Network: {} - {} = {:+.5f} ({:+.2f})".format(
-        test_input[0], test_input[1], output[0][1], target[1])
-    )
-    print(" Network: Loss function = {:.7f}".format(
-        network.loss_function(target=target, output=output))
-    )
-
-
 if __name__ == "__main__":
 
     # test num_inputs num_outputs
