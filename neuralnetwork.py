@@ -12,8 +12,6 @@ class NeuralNetwork:
         num_outputs number of output nodes
         activation_function is "sigmoid" or "tanh"
         '''
-        if num_inputs < 2:
-            exit(" num_inputs must be more than 1!")
         self.num_inputs = num_inputs
         self.hidden_layers = hidden_layers
         self.num_outputs = num_outputs
