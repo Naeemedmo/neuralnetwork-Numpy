@@ -37,11 +37,39 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
                 network.weights[i][j, k] -= epsilon
 
 
+def build_network_and_check(num_inputs, num_outputs, inputs, targets, batch_size, activation_function):
+
+    network = NeuralNetwork(num_inputs=num_inputs, hidden_layers=[5], num_outputs=num_outputs,
+                            activation_function=activation_function)
+    # Create a generator for training
+    trainer = network.train(inputs=inputs, targets=targets, epochs=2,
+                            learning_rate=0.01, batch_size=batch_size)
+    try:
+        next(trainer)
+    except ValueError:
+        print(" Test failed for the following setup:")
+        print(" num_input = {}".format(num_inputs))
+        print(" num_output = {}".format(num_outputs))
+        print(" batch_size = {}".format(batch_size))
+        print(" activation_function = {}".format(activation_function))
+
+
 # test num_inputs num_outputs
+def test_num_input_num_outputs_batch_size():
+    batch_size = [1, 5, 10]
+    num_trainig_data = 10
+    inputs = np.random.rand(num_trainig_data, 3) * 0.5
+    targets = np.divide(inputs, 2)
+    # slice the array and check different number of inputs and outputs
+    for num_inputs in range(1, 4):
+        for num_outputs in range(1, 4):
+            for size in batch_size:
+                build_network_and_check(num_inputs=num_inputs,
+                                        num_outputs=num_outputs,
+                                        inputs=inputs[:, 0:num_inputs],
+                                        targets=targets[:, 0:num_outputs],
+                                        batch_size=size, activation_function='tanh')
 
-# test batch_size
-
-# test activation functions tanh sigmoid
 
 def test_derivatives():
     # For testing only one element in output is allowed
