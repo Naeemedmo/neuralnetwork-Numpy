@@ -139,10 +139,10 @@ class NetworkPlot():
         plt.axis('off')
         # print information on the corner
         min_weights, max_weights, min_biases, max_biases = self.iteration_bounds(weights, biases)
-        information = "max(abs(weights)) = {:.5f} \n".format(max_weights)
-        information += "min(abs(weights)) = {:.5f} \n".format(min_weights)
-        information += "max(abs(biases)) = {:.5f} \n".format(max_biases)
-        information += "min(abs(biases)) = {:.5f} \n".format(min_biases)
+        information = f'max(abs(weights)) = {max_weights:.5f} \n'
+        information += f'min(abs(weights)) = {min_weights:.5f} \n'
+        information += f'max(abs(biases)) = {max_biases:.5f} \n'
+        information += f'min(abs(biases)) = {min_biases:.5f} \n'
         self.ax.text(
             x=1.2,
             y=-0.1,
