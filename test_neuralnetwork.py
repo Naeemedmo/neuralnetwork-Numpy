@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 from neuralnetwork import NeuralNetwork
+from activation_function import HyperbolicTangent
 
 
 def check_weight_derivatives(network, input, target, epsilon, accept_diff, print_info):
@@ -68,13 +69,15 @@ def test_num_input_num_outputs_batch_size():
                                         num_outputs=num_outputs,
                                         inputs=inputs[:, 0:num_inputs],
                                         targets=targets[:, 0:num_outputs],
-                                        batch_size=size, activation_function='tanh')
+                                        batch_size=size,
+                                        activation_function=HyperbolicTangent())
 
 
 def test_derivatives():
     # For testing only one element in output is allowed
     single_input = np.array([0.3, 0.1])
     single_output = np.array([0.4])
-    network = NeuralNetwork(num_inputs=2, hidden_layers=[3], num_outputs=1, activation_function='tanh')
+    network = NeuralNetwork(num_inputs=2, hidden_layers=[3], num_outputs=1,
+                            activation_function=HyperbolicTangent())
     check_weight_derivatives(network=network, input=single_input, target=single_output, epsilon=1e-10,
                              accept_diff=1e-5, print_info=False)

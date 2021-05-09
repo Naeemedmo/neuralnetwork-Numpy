@@ -16,12 +16,7 @@ class NeuralNetwork:
         self.hidden_layers = hidden_layers
         self.num_outputs = num_outputs
         # choice of activation function
-        if 'sigmoid' in activation_function:
-            self.activation_function = self.sigmoid
-            self.activation_derivative = self.sigmoid_derivative
-        elif 'tanh' in activation_function:
-            self.activation_function = self.hyperbolic_tangent
-            self.activation_derivative = self.hyperbolic_tangent_derivative
+        self.activation_function = activation_function
 
         # an array that represent the nodes in layers
         layers = [num_inputs] + hidden_layers + [num_outputs]
@@ -44,7 +39,7 @@ class NeuralNetwork:
         activations = [np.atleast_2d(inputs)]
         for bias, weight in zip(self.biases, self.weights):
             activations.append(
-                self.activation_function(np.inner(weight.T, activations[-1]).T + bias)
+                self.activation_function.evaluate(np.inner(weight.T, activations[-1]).T + bias)
             )
         return activations
 
@@ -70,7 +65,7 @@ class NeuralNetwork:
         for i in reversed(range(len(weight_derivatives))):
             # calculate delta dependent on activation funtion type
             # delta = dC/da * da/dz
-            delta = error * self.activation_derivative(activations[i + 1])
+            delta = error * self.activation_function.derivative(activations[i + 1])
             # dC/db = dC/da * da/dz * dx/db [note that dx/db = 1]
             bias_derivatives[i] = np.average(delta, axis=0)
             # dC/dw = dC/da * da/dz * dz/dw [note that dz/dw = a]
@@ -118,28 +113,3 @@ class NeuralNetwork:
         Calculate loss function derivative (dC/da)
         '''
         return -2.0 * (target - output)
-
-    # Activation functions and their derivatives
-    def sigmoid(self, x):
-        '''
-        The function takes any real value as input and outputs values in the range 0 to 1.
-        '''
-        return 1.0 / (1.0 + np.exp(-x))
-
-    def sigmoid_derivative(self, sigmoid_x):
-        '''
-        sigmoid_x is the same as sigmoid(x)
-        '''
-        return sigmoid_x * (1.0 - sigmoid_x)
-
-    def hyperbolic_tangent(self, x):
-        '''
-        The function takes any real value as input and outputs values in the range -1 to 1.
-        '''
-        return (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
-
-    def hyperbolic_tangent_derivative(self, tanh_x):
-        '''
-        tanh_x is the same as tanh(x)
-        '''
-        return 1 - tanh_x ** 2
