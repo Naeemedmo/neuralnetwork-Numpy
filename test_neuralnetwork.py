@@ -29,10 +29,10 @@ def check_weight_derivatives(network, input, target, epsilon, accept_diff, print
 
                 if print_info or difference > accept_diff:
                     print()
-                    print(" Layer: {}, leftside node: {}, rightside node: {}".format(i, j, k))
-                    print(" The difference is:           {:.8f}".format(difference))
-                    print(" The numerical derivative is: {:.8f}".format(numerical_derivative))
-                    print(" The network's derivative is: {:.8f}".format(weight_derivatives[i][j, k]))
+                    print(f' Layer: {i}, leftside node: {j}, rightside node: {k}')
+                    print(f' The difference is:           {difference:.8f}')
+                    print(f' The numerical derivative is: {numerical_derivative:.8f}')
+                    print(f' The network\'s derivative is: {weight_derivatives[i][j, k]:.8f}')
                     print()
                 assert difference < accept_diff, "Derivative check failed! Check the network implementation!"
                 network.weights[i][j, k] -= epsilon
@@ -49,10 +49,10 @@ def build_network_and_check(num_inputs, num_outputs, inputs, targets, batch_size
         next(trainer)
     except ValueError:
         print(" Test failed for the following setup:")
-        print(" num_input = {}".format(num_inputs))
-        print(" num_output = {}".format(num_outputs))
-        print(" batch_size = {}".format(batch_size))
-        print(" activation_function = {}".format(activation_function))
+        print(f' num_input = {num_inputs}')
+        print(f' num_output = {num_outputs}')
+        print(f' batch_size = {batch_size}')
+        print(f' activation_function = {activation_function}')
 
 
 # test num_inputs num_outputs
