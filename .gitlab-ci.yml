@@ -33,13 +33,25 @@ test:
     # test the network 
     - pytest
 
-#pages:
-#  script:
-#    - pip install sphinx sphinx-rtd-theme
-#    - cd doc ; make html
-#    - mv build/html/ ../public/
-#  artifacts:
-#    paths:
-#      - public
-#  rules:
-#    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+docs:
+  script:
+    - pip install sphinx sphinx-rtd-theme
+    - cd docs ; sphinx-build -b html . _build
+  artifacts:
+    paths:
+      - docs/_build
+  only:
+  - branches
+  except:
+  - master
+
+pages:
+  script:
+    - pip install sphinx sphinx-rtd-theme
+    - cd docs ; sphinx-build -b html . _build
+    - mv _build/ ../public/
+  artifacts:
+    paths:
+      - public
+  only:
+  - master
