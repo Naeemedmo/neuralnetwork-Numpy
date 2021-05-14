@@ -41,17 +41,16 @@ docs:
     paths:
       - docs/_build
   only:
-  - branches
-  except:
-  - master
+    - master
+    - merge_requests
 
 pages:
+  needs: 
+    - docs
   script:
-    - pip install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
-    - cd docs ; sphinx-build -b html . _build
-    - mv _build/ ../public/
+    - mv docs/_build/ public/
   artifacts:
     paths:
       - public
   only:
-  - master
+    - master
