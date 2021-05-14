@@ -30,12 +30,12 @@ test:
     - pip install -r requirements.txt
     # check the style
     - flake8 --config flake8.config --exclude venv
-    # test the network 
+    # test the network
     - pytest
 
 docs:
   script:
-    - pip install sphinx sphinx-rtd-theme
+    - pip install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
     - cd docs ; sphinx-build -b html . _build
   artifacts:
     paths:
@@ -47,7 +47,7 @@ docs:
 
 pages:
   script:
-    - pip install sphinx sphinx-rtd-theme
+    - pip install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
     - cd docs ; sphinx-build -b html . _build
     - mv _build/ ../public/
   artifacts:
