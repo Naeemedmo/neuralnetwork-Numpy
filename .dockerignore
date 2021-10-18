@@ -1,0 +1,10 @@
+#Ignoring git and cache folders
+.git
+.gitlab-ci.yml
+.cache
+
+#Ignoring all the markdown
+*.md
+
+# Liecense file
+LICENSE
