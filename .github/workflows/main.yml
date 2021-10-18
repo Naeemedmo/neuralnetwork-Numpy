@@ -6,7 +6,11 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: ghcr.io/naeemedmo/testenv:latest
+    container:
+      image: ghcr.io/naeemedmo/testenv:latest
+      credentials:
+         username: naeemedmo
+         password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
