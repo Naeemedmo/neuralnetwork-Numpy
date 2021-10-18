@@ -1,0 +1,16 @@
+
+
+name: neuralnetwork
+on: [push, pull_request]
+
+jobs:
+  test:
+
+    runs-on: ghcr.io/naeemedmo/testenv:latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: running tests
+      run: |
+        flake8 --config flake8.config 
+        pytest
