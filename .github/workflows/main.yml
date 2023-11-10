@@ -1,0 +1,20 @@
+
+
+name: neuralnetwork
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/naeemedmo/testenv:latest
+      credentials:
+         username: naeemedmo
+         password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: running tests
+      run: |
+        flake8 --config flake8.config 
+        pytest
